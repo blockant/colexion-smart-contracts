@@ -667,6 +667,29 @@ contract MarketPlace is ERC165 {
         return true;
     }
 
+    function cancelOrder(uint256 _orderNonce) external returns (bool) {
+        Order storage _order = order[_orderNonce];
+        require(_order.seller == msg.sender, "Not the seller");
+        if (
+            _order.saleType == uint8(SaleType.Auction) &&
+            bid[_orderNonce].amount > 0
+        ) {
+            sendDirect(
+                bid[_orderNonce].bidder,
+                bid[_orderNonce].amount,
+                _order.paymentToken
+            );
+            delete bid[_orderNonce];
+        }
+        ERC721Interface.safeTransferFrom(
+            address(this),
+            msg.sender,
+            _order.tokenId
+        );
+        delete (order[orderNonce]);
+        return true;
+    }
+
     /**
      * @dev Internal function to send tokens from the user to this contract
      *
