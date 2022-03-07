@@ -547,7 +547,7 @@ contract MarketPlace is ERC165 {
                 sendValue(
                     msg.sender,
                     royalties[_order.tokenId].owner,
-                    fees,
+                    royaltyFee,
                     _order.paymentToken
                 );
         } else {
@@ -656,7 +656,7 @@ contract MarketPlace is ERC165 {
             if (royaltyFee > 0)
                 sendDirect(
                     royalties[_order.tokenId].owner,
-                    fees,
+                    royaltyFee,
                     _order.paymentToken
                 );
         } else {
@@ -664,7 +664,7 @@ contract MarketPlace is ERC165 {
         }
         sendDirect(
             (_order.seller),
-            (currentBidAmount - fees),
+            (currentBidAmount - royaltyFee - fees),
             _order.paymentToken
         );
         ERC1155Interface.safeTransferFrom(
