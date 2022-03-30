@@ -697,7 +697,7 @@ contract NFT is ERC721 {
     uint256 public tokenId;
     address public owner;
     address public marketPlace;
-    Market public MarketInterface;
+    Market internal MarketInterface;
 
     enum SaleType {
         BuyNow,
@@ -707,6 +707,8 @@ contract NFT is ERC721 {
 
     mapping(uint256 => string) public URI;
     mapping(address => bool) public paymentTokens;
+
+    event PaymentTokenUpdated(address _paymentToken, bool status);
 
     constructor(
         string memory name_,
@@ -786,6 +788,7 @@ contract NFT is ERC721 {
         require(msg.sender == owner, "Not the owner");
         require(!paymentTokens[_token], "Token already added as payment mode");
         paymentTokens[_token] = true;
+        emit PaymentTokenUpdated(_token, true);
     }
 
     /**
@@ -797,6 +800,7 @@ contract NFT is ERC721 {
         require(msg.sender == owner, "Not the owner");
         require(paymentTokens[_token], "Token not added as payment mode");
         paymentTokens[_token] = false;
+        emit PaymentTokenUpdated(_token, false);
     }
 
     /**
@@ -840,7 +844,7 @@ contract NFT is ERC721 {
         address royaltyAddress,
         uint256 royaltyPercentage,
         address _paymentToken
-    ) external returns (bool) {
+    ) public returns (bool) {
         require(bytes(_tokenURI).length > 0, "Invalid URI");
         require(
             paymentTokens[_paymentToken],
@@ -869,6 +873,45 @@ contract NFT is ERC721 {
         tokenId++;
         return true;
     }
+
+    // function massMintToMarketPlace(
+    //     string[] calldata _tokenURI,
+    //     SaleType[] calldata _saleType,
+    //     uint256[] calldata pricePerNFT,
+    //     uint256[] calldata startTime,
+    //     uint256[] calldata endTime,
+    //     address[] calldata royaltyAddress,
+    //     uint256[] calldata royaltyPercentage,
+    //     address[] calldata _paymentToken
+    // ) external returns (bool) {
+    //     uint256 len = _tokenURI.length;
+    //     require(
+    //         len == _saleType.length &&
+    //             len == pricePerNFT.length &&
+    //             len == startTime.length &&
+    //             len == endTime.length &&
+    //             len == royaltyAddress.length &&
+    //             len == royaltyPercentage.length &&
+    //             len == _paymentToken.length,
+    //         "Length Mismatch"
+    //     );
+    //     for (uint256 i; i < len; i++) {
+    //         require(
+    //             mintToMarketPlace(
+    //                 _tokenURI[i],
+    //                 _saleType[i],
+    //                 pricePerNFT[i],
+    //                 startTime[i],
+    //                 endTime[i],
+    //                 royaltyAddress[i],
+    //                 royaltyPercentage[i],
+    //                 _paymentToken[i]
+    //             ),
+    //             "Minting to Marketplace failed"
+    //         );
+    //     }
+    //     return true;
+    // }
 
     /**
      * @dev Public function to query the URI for given NFT
