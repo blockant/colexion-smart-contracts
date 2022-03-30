@@ -362,6 +362,29 @@ contract MarketPlace is ERC165 {
         OpenForBids
     }
 
+    event PlatformFeesUpdated(uint256 fees, uint256 timestamp);
+    event OwnerUpdated(address newOwner, uint256 timestamp);
+    event OrderPlaced(Order _order, uint256 _orderNonce, uint256 timestamp);
+    event OrderCancelled(Order _order, uint256 _orderNonce, uint256 timestamp);
+    event ItemBought(
+        Order _order,
+        uint256 _orderNonce,
+        uint256 _copies,
+        uint256 timestamp
+    );
+    event BidPlaced(
+        Order _order,
+        uint256 _orderNonce,
+        uint256 bidAmount,
+        uint256 timestamp
+    );
+    event BidWithdrawn(
+        Order _order,
+        uint256 _orderNonce,
+        uint256 bidAmount,
+        uint256 timestamp
+    );
+
     constructor(
         address _token,
         address _owner,
@@ -372,6 +395,8 @@ contract MarketPlace is ERC165 {
         tokenAddress = _token;
         owner = payable(_owner);
         platformFees = _platformFees;
+        emit OwnerUpdated(_owner, block.timestamp);
+        emit PlatformFeesUpdated(_platformFees, block.timestamp);
     }
 
     /**
@@ -383,6 +408,7 @@ contract MarketPlace is ERC165 {
         require(msg.sender == owner, "Only owner");
         require(fee <= 50, "High fee"); //Max cap on platform fee is set to 50, and can be changed before deployment
         platformFees = fee;
+        emit PlatformFeesUpdated(fee, block.timestamp);
     }
 
     /**
@@ -394,6 +420,7 @@ contract MarketPlace is ERC165 {
         require(msg.sender == owner, "Only owner");
         require(newOwner != address(0), "Zero address");
         owner = payable(newOwner);
+        emit OwnerUpdated(newOwner, block.timestamp);
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -463,6 +490,7 @@ contract MarketPlace is ERC165 {
                 false
             );
         }
+        emit OrderPlaced(order[orderNonce], orderNonce, block.timestamp);
         return true;
     }
 
@@ -511,6 +539,7 @@ contract MarketPlace is ERC165 {
                 false
             );
         }
+        emit OrderPlaced(order[orderNonce], orderNonce, block.timestamp);
         return true;
     }
 
@@ -570,8 +599,15 @@ contract MarketPlace is ERC165 {
             ""
         );
 
+        emit ItemBought(
+            order[_orderNonce],
+            _orderNonce,
+            copies,
+            block.timestamp
+        );
+
         if (_order.copies == copies) {
-            delete (order[orderNonce]);
+            delete (order[_orderNonce]);
         } else {
             order[_orderNonce].copies -= copies;
         }
@@ -610,6 +646,7 @@ contract MarketPlace is ERC165 {
             sendValue(msg.sender, address(this), amount, _order.paymentToken);
             sendDirect(msg.sender, currentBid.amount, _order.paymentToken);
             currentBid.amount = amount;
+            currentBid.copies = copies;
         } else {
             sendValue(msg.sender, address(this), amount, _order.paymentToken);
             openBids[_orderNonce].push(
@@ -623,6 +660,8 @@ contract MarketPlace is ERC165 {
             );
             index[msg.sender][_orderNonce] = openBids[_orderNonce].length;
         }
+        emit BidPlaced(_order, _orderNonce, amount, block.timestamp);
+
         return true;
     }
 
@@ -674,11 +713,13 @@ contract MarketPlace is ERC165 {
             _bid.copies,
             ""
         );
+        emit ItemBought(_order, _orderNonce, _bid.copies, block.timestamp);
         if (_order.copies == _bid.copies) {
-            delete (order[orderNonce]);
+            delete (order[_orderNonce]);
         } else {
             order[_orderNonce].copies -= _bid.copies;
         }
+
         delete openBids[_orderNonce][index[buyer][_orderNonce] - 1];
         delete index[buyer][_orderNonce];
         return true;
@@ -711,6 +752,12 @@ contract MarketPlace is ERC165 {
             currentBidAmount,
             openBids[_orderNonce][index[msg.sender][_orderNonce] - 1].token
         );
+        emit BidWithdrawn(
+            order[_orderNonce],
+            _orderNonce,
+            currentBidAmount,
+            block.timestamp
+        );
         delete openBids[_orderNonce][index[msg.sender][_orderNonce] - 1];
         delete index[msg.sender][_orderNonce];
         return true;
@@ -726,7 +773,8 @@ contract MarketPlace is ERC165 {
             _order.copies,
             ""
         );
-        delete (order[orderNonce]);
+        emit OrderCancelled(_order, _orderNonce, block.timestamp);
+        delete (order[_orderNonce]);
         return true;
     }
 
