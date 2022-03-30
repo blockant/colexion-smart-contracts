@@ -1084,6 +1084,8 @@ contract NFT1155 is ERC1155 {
     mapping(uint256 => string) public uri;
     mapping(address => bool) public paymentTokens;
 
+    event PaymentTokenUpdated(address _paymentToken, bool status);
+
     constructor(
         string memory name_,
         string memory symbol_,
@@ -1170,6 +1172,7 @@ contract NFT1155 is ERC1155 {
         require(msg.sender == owner, "Not the owner");
         require(!paymentTokens[_token], "Token already added as payment mode");
         paymentTokens[_token] = true;
+        emit PaymentTokenUpdated(_token, true);
     }
 
     /**
@@ -1181,6 +1184,7 @@ contract NFT1155 is ERC1155 {
         require(msg.sender == owner, "Not the owner");
         require(paymentTokens[_token], "Token not added as payment mode");
         paymentTokens[_token] = false;
+        emit PaymentTokenUpdated(_token, false);
     }
 
     /**
